@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.codeanalyser</groupId>
+        <artifactId>codeanalyser-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>analyser-api</artifactId>
+    <name>CodeAnalyser :: API</name>
+    <description>REST API — accepts repo URLs, returns job IDs, streams progress</description>
+
+    <build>
+        <plugins>
+            <!--
+                spring-boot-maven-plugin must be declared in the runnable module
+                (analyser-api) — not in the parent — so only this module produces
+                a Spring Boot fat JAR. analyser-worker and analyser-common produce
+                plain JARs that are bundled inside BOOT-INF/lib/.
+
+                The mainClass is set explicitly to avoid any ambiguity when the
+                classpath contains WorkerApplication (a standalone smoke-test entry
+                point that is NOT @SpringBootApplication in the combined JAR context).
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.codeanalyser.api.ApiApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!--
+            Milestone 4 deployment choice: single runnable JAR.
+            analyser-api depends on analyser-worker so both Spring contexts
+            merge into one application. The module boundary is preserved in
+            code; it is a deployment-time decision to run them together.
+
+            Scaled deployment upgrade (Option A):
+              1. Remove this dependency.
+              2. In AnalysisService, replace the executor.submit() call with
+                 an XADD to stream:jobs.submitted.
+              3. Run analyser-worker as a separate container that XREADGROUP's
+                 from that stream.
+              No other code changes required.
+        -->
+        <dependency>
+            <groupId>com.codeanalyser</groupId>
+            <artifactId>analyser-worker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.codeanalyser</groupId>
+            <artifactId>analyser-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+</project>

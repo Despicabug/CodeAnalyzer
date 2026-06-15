@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.codeanalyser</groupId>
+        <artifactId>codeanalyser-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>analyser-worker</artifactId>
+    <name>CodeAnalyser :: Worker</name>
+    <description>Ingestion pipeline: clone, chunk, analyse, aggregate</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.codeanalyser</groupId>
+            <artifactId>analyser-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <!-- Spring Web for the GitHub API pre-clone size check (RestClient) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- Configuration properties binding (@ConfigurationProperties) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!--
+            Spring Data Redis: RedisTemplate, opsForStream(), StreamMessageListenerContainer.
+            Pulls in Lettuce as the default async client — no extra config needed.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!--
+            Guava RateLimiter: token-bucket rate limiting for LLM API calls.
+            We use only RateLimiter from Guava, so the dep is justified.
+            TODO (rate-limiting upgrade): swap for a Redis-based sliding-window
+            counter when running multiple worker pods (Milestone N).
+        -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.2.1-jre</version>
+        </dependency>
+    </dependencies>
+
+</project>
