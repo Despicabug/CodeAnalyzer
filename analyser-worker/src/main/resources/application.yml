@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: codeanalyser-worker
+
+  # ---------------------------------------------------------------------------
+  # Redis connection (Lettuce client, auto-configured by Spring Boot)
+  # Override via SPRING_DATA_REDIS_HOST / _PORT env vars in Docker.
+  # ---------------------------------------------------------------------------
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      connect-timeout: 5s
+      timeout: 10s
+
+# ---------------------------------------------------------------------------
+# Ingestion pipeline tuning
+# All values here are the defaults — override via environment variables or
+# a docker-compose .env file in production.
+#
+# Environment variable mapping (Spring Boot convention):
+#   ingestion.max-repo-size-mb    → INGESTION_MAX_REPO_SIZE_MB
+#   ingestion.clone-timeout-seconds → INGESTION_CLONE_TIMEOUT_SECONDS
+#   ingestion.max-concurrent-clones → INGESTION_MAX_CONCURRENT_CLONES
+#   ingestion.max-chunk-bytes     → INGESTION_MAX_CHUNK_BYTES
+#   ingestion.max-retries         → INGESTION_MAX_RETRIES
+#   ingestion.github-api-token    → INGESTION_GITHUB_API_TOKEN
+# ---------------------------------------------------------------------------
+ingestion:
+  max-repo-size-mb: 200
+  clone-timeout-seconds: 120
+  max-concurrent-clones: 3
+  max-chunk-bytes: 8192
+  max-retries: 3
+  github-api-token: ${GITHUB_TOKEN:}   # empty = unauthenticated (60 req/hr)
+
+# ---------------------------------------------------------------------------
+# LLM provider — defaults to local Ollama (free, no key needed).
+# See LlmProperties for full documentation of each field.
+# ---------------------------------------------------------------------------
+llm:
+  provider: ${LLM_PROVIDER:ollama}
+  model: ${LLM_MODEL:llama3.2}
+  base-url: ${LLM_BASE_URL:http://localhost:11434}
+  api-key: ${LLM_API_KEY:}
+  requests-per-second: ${LLM_REQUESTS_PER_SECOND:2.0}
+  timeout-seconds: 120
+
+# ---------------------------------------------------------------------------
+# Logging
+# Set to DEBUG for development to see per-file trace output from the chunker.
+# ---------------------------------------------------------------------------
+logging:
+  level:
+    com.codeanalyser: INFO
