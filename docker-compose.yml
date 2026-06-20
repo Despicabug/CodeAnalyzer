@@ -1,0 +1,55 @@
+version: "3.9"
+
+# ── Services ──────────────────────────────────────────────────────────────────
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: codeanalyser-redis
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+        --appendonly no
+        --save ""
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # No named volume — purely in-memory for the demo.
+    # For a production deployment add: volumes: [redis-data:/data]
+    # and change --appendonly to yes.
+
+  # ── Single combined app (API + worker in one JVM) ────────────────────────
+  # Milestone 4 deployment decision: one container for simplicity on free tiers.
+  # To split into separate containers, see analyser-api/pom.xml comments.
+  app:
+    build:
+      context: .
+      dockerfile: analyser-api/Dockerfile
+    container_name: codeanalyser-app
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      INGESTION_MAX_REPO_SIZE_MB: 200
+      INGESTION_MAX_CONCURRENT_CLONES: 3
+      INGESTION_CLONE_TIMEOUT_SECONDS: 120
+      INGESTION_MAX_CHUNK_BYTES: 8192
+      INGESTION_MAX_RETRIES: 3
+      INGESTION_GITHUB_API_TOKEN: ${GITHUB_TOKEN:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_MODEL: ${LLM_MODEL:-llama3.2}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_REQUESTS_PER_SECOND: ${LLM_REQUESTS_PER_SECOND:-2.0}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
