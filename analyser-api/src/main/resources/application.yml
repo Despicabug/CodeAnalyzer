@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: codeanalyser-api
+
+  # Redis connection (Lettuce client, auto-configured by Spring Boot).
+  # Overridden by SPRING_DATA_REDIS_HOST / _PORT env vars in Docker.
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      connect-timeout: 5s
+      timeout: 10s
+
+server:
+  port: 8080
+
+# Expose health endpoint for Docker HEALTHCHECK.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+# ---------------------------------------------------------------------------
+# Ingestion pipeline — all values are defaults; override via env vars.
+# ---------------------------------------------------------------------------
+ingestion:
+  max-repo-size-mb: 200
+  clone-timeout-seconds: 120
+  max-concurrent-clones: 3
+  max-chunk-bytes: 8192
+  max-retries: 3
+  github-api-token: ${GITHUB_TOKEN:}   # empty = unauthenticated (60 req/hr)
+
+# ---------------------------------------------------------------------------
+# LLM provider — defaults to local Ollama (free, no key needed).
+# Set LLM_PROVIDER=openai and LLM_API_KEY=sk-... to use OpenAI instead.
+# ---------------------------------------------------------------------------
+llm:
+  provider: ${LLM_PROVIDER:ollama}
+  model: ${LLM_MODEL:llama3.2}
+  base-url: ${LLM_BASE_URL:http://localhost:11434}
+  api-key: ${LLM_API_KEY:}
+  requests-per-second: ${LLM_REQUESTS_PER_SECOND:2.0}
+  timeout-seconds: 120
+
+logging:
+  level:
+    com.codeanalyser: INFO
